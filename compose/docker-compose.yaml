@@ -1,0 +1,216 @@
+################################################################################
+#
+#   simple docker compose for hyperledger fabric
+#   intended to be used for testing pkcs11 with gbolo/fabric-* docker images
+#
+################################################################################
+
+version: '2'
+
+services:
+
+  ca.fabric.linuxctl.com:
+    container_name: fabric-ca
+    extends:
+      file:  defaults.yaml
+      service: ca-base
+    environment:
+      - FABRIC_CA_SERVER_CSR_CN=ca.fabric.linuxctl.com
+      - FABRIC_CA_SERVER_CSR_HOSTS=ca.fabric.linuxctl.com
+    command: /bin/bash -c './usr/local/bin/entrypoint.sh fabric-ca-server start -b admin:adminpw'
+
+  caOrderer.fabric.linuxctl.com:
+    container_name: fabric-caOrderer
+    extends:
+      file:  defaults.yaml
+      service: ca-base
+    environment:
+      - FABRIC_CA_SERVER_CSR_CN=caOrderer.fabric.linuxctl.com
+      - FABRIC_CA_SERVER_CSR_HOSTS=caOrderer.fabric.linuxctl.com
+
+  ca-client-register:
+    container_name: fabric-ca-client
+    image: gbolo/fabric-ca:${FABRIC_VERSION}-softhsm
+    environment:
+      - FABRIC_CA_CLIENT_TLS_CERTFILES=/data/tls/ca_root.pem
+    volumes:
+      - ./files/bin/register_users.sh:/tmp/register_users.sh
+      - ./files/tls/certs:/data/tls:ro
+      - adminOrg1MSP:/etc/hyperledger/fabric-ca-server/msp
+    command: /bin/bash -c 'sleep 3; sh /tmp/register_users.sh ca.fabric.linuxctl.com'
+    depends_on:
+      - ca.fabric.linuxctl.com
+    networks:
+      - fabric
+
+  caOrderer-client-register:
+    container_name: fabric-ca-clientOrderer
+    image: gbolo/fabric-ca:${FABRIC_VERSION}-softhsm
+    environment:
+      - FABRIC_CA_CLIENT_TLS_CERTFILES=/data/tls/ca_root.pem
+    volumes:
+      - ./files/bin/register_users.sh:/tmp/register_users.sh
+      - ./files/tls/certs:/data/tls:ro
+      - adminOrdererOrg1MSP:/etc/hyperledger/fabric-ca-server/msp
+    command: /bin/bash -c 'sleep 3; sh /tmp/register_users.sh caOrderer.fabric.linuxctl.com'
+    depends_on:
+      - caOrderer.fabric.linuxctl.com
+    networks:
+      - fabric
+
+  fabric-tools:
+    container_name: fabric-tools
+    image: gbolo/fabric-tools:${FABRIC_VERSION}
+    environment:
+      - FABRIC_CFG_PATH=/etc/hyperledger/fabric
+      - CORE_PEER_BCCSP_DEFAULT=SW
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_LOGGING_LEVEL=DEBUG
+      - CORE_PEER_ID=cli
+      - CORE_PEER_LOCALMSPID=Org1MSP
+      - CORE_PEER_TLS_ENABLED=false
+      - CORE_PEER_TLS_CERT_FILE=/data/tls/server_wild_fabric.linuxctl.com.pem
+      - CORE_PEER_TLS_KEY_FILE=/data/tls/server_wild_fabric.linuxctl.com-key.pem
+      - CORE_PEER_TLS_ROOTCERT_FILE=/data/tls/ca_root.pem
+    volumes:
+      - peer0MSP:/data/peer0MSP
+      - peer1MSP:/data/peer1MSP
+      - orderer0MSP:/data/orderer0MSP
+      - adminOrg1MSP:/data/adminOrg1MSP
+      - adminOrdererOrg1MSP:/data/adminOrdererOrg1MSP
+      - channelArtifacts:/data/channel-artifacts
+      - ./files/config/configtx-1.0.0.yaml:/data/configtx.yaml:ro
+      - ./files/config/fabric-cli-1.0.0.yaml:/data/fabric-cli.yaml:ro
+      - ./files/config/core-1.0.0.yaml:/etc/hyperledger/fabric/core.yaml:ro
+      - ./files/bin/create_channel_tx.sh:/data/create_channel_tx.sh
+      - ./files/bin/run_test.sh:/data/run_test.sh
+      - ./files/tls/certs:/data/tls:ro
+    command: /bin/bash -c 'echo "Running Test in 20 seconds..."; sleep 20; ./data/run_test.sh'
+    depends_on:
+      - peer0.fabric.linuxctl.com
+      - peer1.fabric.linuxctl.com
+      - orderer0.fabric.linuxctl.com
+    networks:
+      - fabric
+
+  peer0.fabric.linuxctl.com:
+    container_name: fabric-peer0
+    extends:
+      file:  defaults.yaml
+      service: peer-base
+    volumes:
+      # local msp dir
+      - peer0MSP:/etc/hyperledger/fabric/msp
+      # volumes for msp admin certs
+      - adminOrg1MSP:/data/adminOrg1MSP
+      - adminOrdererOrg1MSP:/data/adminOrdererOrg1MSP
+      # tlsca certs for msp
+      - ./files/tls/certs/ca_root.pem:/data/msp_tlsca/ca_root.pem:ro
+    environment:
+      # FOR ENROLLMENT
+      - FABRIC_CA_CLIENT_URL=http://peer0:testing@ca.fabric.linuxctl.com:7054
+      - FABRIC_CA_CLIENT_CSR_CN=peer0
+      - FABRIC_CA_CLIENT_CSR_HOSTS=peer0.fabric.linuxctl.com
+      - FABRIC_CA_CLIENT_TLS_CERTFILES=/data/tls/ca_root.pem
+      # DAEMON SPECIFIC OPTIONS
+      - CORE_PEER_ID=peer0.fabric.linuxctl.com
+      - CORE_PEER_ADDRESS=peer0.fabric.linuxctl.com:7051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.fabric.linuxctl.com:7051
+      - CORE_PEER_LOCALMSPID=Org1MSP
+      - CORE_PEER_GOSSIP_ORGLEADER=true
+      # CUSTOM ENTRYPOINT OPTIONS
+      - MSP_ADMIN_DIR=/data/adminOrg1MSP/signcerts
+      - MSP_TLSCACERTS_DIR=/data/msp_tlsca
+    command: /bin/bash -c 'sleep 8; ./usr/local/bin/entrypoint.sh peer node start --peer-defaultchain=false'
+    depends_on:
+      - ca-client-register
+    networks:
+      - fabric
+
+  peer1.fabric.linuxctl.com:
+    container_name: fabric-peer1
+    extends:
+      file:  defaults.yaml
+      service: peer-base
+    volumes:
+      # local msp dir
+      - peer1MSP:/etc/hyperledger/fabric/msp
+      # volumes for msp admin certs
+      - adminOrg1MSP:/data/adminOrg1MSP
+      - adminOrdererOrg1MSP:/data/adminOrdererOrg1MSP
+      # tlsca certs for msp
+      - ./files/tls/certs/ca_root.pem:/data/msp_tlsca/ca_root.pem:ro
+    environment:
+      # FOR ENROLLMENT
+      - FABRIC_CA_CLIENT_URL=http://peer1:testing@ca.fabric.linuxctl.com:7054
+      - FABRIC_CA_CLIENT_CSR_CN=peer1
+      - FABRIC_CA_CLIENT_CSR_HOSTS=peer1.fabric.linuxctl.com
+      - FABRIC_CA_CLIENT_TLS_CERTFILES=/data/tls/ca_root.pem
+      # DAEMON SPECIFIC OPTIONS
+      - CORE_PEER_ID=peer1.fabric.linuxctl.com
+      - CORE_PEER_ADDRESS=peer1.fabric.linuxctl.com:7051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer1.fabric.linuxctl.com:7051
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.fabric.linuxctl.com:7051
+      - CORE_PEER_LOCALMSPID=Org1MSP
+      - CORE_PEER_GOSSIP_ORGLEADER=false
+      # CUSTOM ENTRYPOINT OPTIONS
+      - MSP_ADMIN_DIR=/data/adminOrg1MSP/signcerts
+      - MSP_TLSCACERTS_DIR=/data/msp_tlsca
+    command: /bin/bash -c 'sleep 8; ./usr/local/bin/entrypoint.sh peer node start --peer-defaultchain=false'
+    depends_on:
+      - ca-client-register
+    networks:
+      - fabric
+
+  orderer0.fabric.linuxctl.com:
+    container_name: fabric-orderer0
+    extends:
+      file:  defaults.yaml
+      service: orderer-base
+    volumes:
+      # extended entrypoint script
+      - ./files/bin/entrypoint-extended-orderer.sh:/usr/local/bin/entrypoint-extended.sh
+      # tlsca certs for msp
+      - ./files/tls/certs/ca_root.pem:/data/msp_tlsca/ca_root.pem:ro
+      # volumes for msp admin certs
+      - adminOrg1MSP:/data/adminOrg1MSP
+      - adminOrdererOrg1MSP:/data/adminOrdererOrg1MSP
+      # local msp dir
+      - orderer0MSP:/data/orderer0MSP
+    environment:
+      # FOR ENROLLMENT
+      - FABRIC_CA_CLIENT_MSPDIR=/data/orderer0MSP
+      - FABRIC_CA_CLIENT_URL=http://orderer0:testing@caOrderer.fabric.linuxctl.com:7054
+      - FABRIC_CA_CLIENT_CSR_CN=orderer0
+      - FABRIC_CA_CLIENT_CSR_HOSTS=orderer0.fabric.linuxctl.com
+      - FABRIC_CA_CLIENT_TLS_CERTFILES=/data/tls/ca_root.pem
+      # DAEMON SPECIFIC OPTIONS
+      - ORDERER_GENERAL_LOCALMSPDIR=/data/orderer0MSP
+      - ORDERER_GENERAL_LOGLEVEL=info
+      - ORDERER_GENERAL_LOCALMSPID=OrdererMSP
+      - ORDERER_GENERAL_GENESISMETHOD=provisional
+      - ORDERER_GENERAL_GENESISPROFILE=linuxctlOrdererGenesis
+      # CUSTOM ENTRYPOINT OPTIONS
+      - MSP_ADMIN_DIR=/data/adminOrdererOrg1MSP/signcerts
+      - MSP_TLSCACERTS_DIR=/data/msp_tlsca
+      - ENTRYPOINT_EXTENDED=/usr/local/bin/entrypoint-extended.sh
+    command: /bin/bash -c 'sleep 8; ./usr/local/bin/entrypoint.sh orderer start'
+    depends_on:
+      - caOrderer-client-register
+    networks:
+      - fabric
+
+networks:
+  fabric:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.199.199.0/24
+
+volumes:
+  peer0MSP:
+  peer1MSP:
+  orderer0MSP:
+  adminOrg1MSP:
+  adminOrdererOrg1MSP:
+  channelArtifacts:

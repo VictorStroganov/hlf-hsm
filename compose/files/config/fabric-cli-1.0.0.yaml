@@ -5,7 +5,7 @@
 #
 client:
  tls:
-  enabled: true
+  enabled: false
 
  security:
   enabled: true

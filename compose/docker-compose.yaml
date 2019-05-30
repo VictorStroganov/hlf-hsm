@@ -121,6 +121,8 @@ services:
       # CUSTOM ENTRYPOINT OPTIONS
       - MSP_ADMIN_DIR=/data/adminOrg1MSP/signcerts
       - MSP_TLSCACERTS_DIR=/data/msp_tlsca
+    ports:
+      - "7051:7051"
     command: /bin/bash -c 'sleep 8; ./usr/local/bin/entrypoint.sh peer node start --peer-defaultchain=false'
     depends_on:
       - ca-client-register
@@ -156,6 +158,8 @@ services:
       # CUSTOM ENTRYPOINT OPTIONS
       - MSP_ADMIN_DIR=/data/adminOrg1MSP/signcerts
       - MSP_TLSCACERTS_DIR=/data/msp_tlsca
+    ports:
+      - "8051:7051"
     command: /bin/bash -c 'sleep 8; ./usr/local/bin/entrypoint.sh peer node start --peer-defaultchain=false'
     depends_on:
       - ca-client-register

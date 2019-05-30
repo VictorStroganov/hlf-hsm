@@ -50,7 +50,8 @@ function CREATE_CHANNEL {
 	BROADCAST "CREATING CHANNEL: ${CHANNEL_NAME}"
 
 	$PEER_BIN channel create -o ${ORDERER_HOST}:7050 -c ${CHANNEL_NAME} \
-	-f ${CHANNEL_BASEDIR}/${CHANNEL_NAME}.tx --tls ${CORE_PEER_TLS_ENABLED} --cafile ${ORDERER_CA_CERT} >&log.txt
+	-f ${CHANNEL_BASEDIR}/${CHANNEL_NAME}.tx >&log.txt
+# --tls ${CORE_PEER_TLS_ENABLED} --cafile ${ORDERER_CA_CERT} 
 
 	res=$?
 	cat log.txt
@@ -108,8 +109,10 @@ function UPDATE_ANCHORPEERS {
 	local CHANNEL_TX=$2
 
 	$PEER_BIN channel update -o ${ORDERER_HOST}:7050 \
-	-c ${CHANNEL_NAME} -f ${CHANNEL_BASEDIR}/${CHANNEL_TX}.tx \
-	--tls $CORE_PEER_TLS_ENABLED --cafile ${ORDERER_CA_CERT} >&log.txt
+	-c ${CHANNEL_NAME} -f ${CHANNEL_BASEDIR}/${CHANNEL_TX}.tx >&log.txt
+
+	# -c ${CHANNEL_NAME} -f ${CHANNEL_BASEDIR}/${CHANNEL_TX}.tx \
+	# --tls $CORE_PEER_TLS_ENABLED --cafile ${ORDERER_CA_CERT} >&log.txt
 
 	res=$?
 	cat log.txt
@@ -165,8 +168,9 @@ function INIT_CHAINCODE {
 	BROADCAST "${CORE_PEER_ADDRESS} INIT CHAINCODE: ${CC_NAME}"
 
 	$PEER_BIN chaincode instantiate -o ${ORDERER_HOST}:7050 \
-	--tls ${CORE_PEER_TLS_ENABLED} --cafile ${ORDERER_CA_CERT} -C ${CHANNEL_NAME} \
+	-C ${CHANNEL_NAME} \
 	-n ${CC_NAME} -v ${CC_VERSION} -c "${CC_CONSTRUCTOR}" -P "${CC_POLCIY}" >&log.txt
+	# --tls ${CORE_PEER_TLS_ENABLED} --cafile ${ORDERER_CA_CERT} -C ${CHANNEL_NAME} \
 
 	res=$?
 	cat log.txt
@@ -185,8 +189,9 @@ function INVOKE_CHAINCODE {
 	BROADCAST "${CORE_PEER_ADDRESS} INVOKE CHAINCODE: ${CC_NAME}"
 
 	$PEER_BIN chaincode invoke -o ${ORDERER_HOST}:7050 \
-	--tls ${CORE_PEER_TLS_ENABLED} --cafile ${ORDERER_CA_CERT} -C ${CHANNEL_NAME} \
+	-C ${CHANNEL_NAME} \
 	-n ${CC_NAME} -v ${CC_VERSION} -c "${CC_CONSTRUCTOR}" >&log.txt
+	# --tls ${CORE_PEER_TLS_ENABLED} --cafile ${ORDERER_CA_CERT} -C ${CHANNEL_NAME} \
 
 	res=$?
 	cat log.txt
@@ -205,8 +210,10 @@ function QUERY_CHAINCODE {
 	BROADCAST "${CORE_PEER_ADDRESS} QUERY CHAINCODE: ${CC_NAME}"
 
 	$PEER_BIN chaincode query \
-	--tls ${CORE_PEER_TLS_ENABLED} -C ${CHANNEL_NAME} \
+	-C ${CHANNEL_NAME} \
 	-n ${CC_NAME} -v ${CC_VERSION} -c "${CC_QUERY}" >&log.txt
+
+	# --tls ${CORE_PEER_TLS_ENABLED} -C ${CHANNEL_NAME} \
 
 	res=$?
 	cat log.txt
@@ -225,9 +232,9 @@ function FETCH_BLOCK {
 	# when using TLS the block is always called true
 	$PEER_BIN channel fetch ${BLOCK_TO_FETCH} \
 	--channelID ${CHANNEL_NAME} \
-	-o ${ORDERER_HOST}:7050 \
-	--tls ${CORE_PEER_TLS_ENABLED} \
-	--cafile ${ORDERER_CA_CERT}
+	-o ${ORDERER_HOST}:7050 #\
+	# --tls ${CORE_PEER_TLS_ENABLED} \
+	# --cafile ${ORDERER_CA_CERT}
 
 	VERIFY_RESULT $? "Failed to fetch block"
 	mv true ${CHANNEL_NAME}_${BLOCK_TO_FETCH}.block

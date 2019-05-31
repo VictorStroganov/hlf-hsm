@@ -228,6 +228,6 @@ EXECUTE_ADDITIONAL_SCRIPT() {
 
 START_DAEMON() {
   BROADCAST_MSG "STARTING DAEMON... $@"
-  sleep 100000
+  # sleep 100000
   exec "$@"
 }

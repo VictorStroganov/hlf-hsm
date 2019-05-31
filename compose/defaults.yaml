@@ -10,7 +10,8 @@ version: '2'
 services:
 
   peer-base:
-    image: gbolo/fabric-peer:${FABRIC_VERSION}-softhsm
+    image: hsm/fabric-peer:softhsm1.4
+      # gbolo/fabric-peer:${FABRIC_VERSION}-softhsm
     volumes:
       # docker socket
       - /var/run/:/host/var/run/
@@ -52,6 +53,7 @@ services:
 
   ca-base:
     image: gbolo/fabric-ca:${FABRIC_VERSION}-softhsm
+      # hsm/fabric-ca:softhsm1.4
     volumes:
       # main config
       - ./files/config/ca-server-1.0.0-pkcs11.yaml:/etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml:ro
@@ -74,7 +76,7 @@ services:
       - fabric
 
   orderer-base:
-    image: gbolo/fabric-orderer:${FABRIC_VERSION}-softhsm
+    image: hsm/fabric-orderer:softhsm1.4
     # hsm/fabric-orderer:softhsm
     # gbolo/fabric-orderer:${FABRIC_VERSION}-softhsm
     volumes:
@@ -92,7 +94,7 @@ services:
       - FABRIC_CA_CLIENT_BCCSP_PKCS11_LIBRARY=${PKCS11_LIBRARY}
       - FABRIC_CA_CLIENT_BCCSP_PKCS11_LABEL=${PKCS11_LABEL}
       - FABRIC_CA_CLIENT_BCCSP_PKCS11_PIN=${PKCS11_PIN}
-      - FABRIC_CA_CLIENT_BCCSP_PKCS11_SENSITIVEKEYS=${PKCS11_SENSITIVEKEYS}
+      # - FABRIC_CA_CLIENT_BCCSP_PKCS11_SENSITIVEKEYS=${PKCS11_SENSITIVEKEYS}
       - FABRIC_CA_CLIENT_BCCSP_PKCS11_SOFTWAREVERIFY=${PKCS11_SOFTWAREVERIFY}
       # ORDERER BCCSP OPTIONS
       - ORDERER_GENERAL_BCCSP_DEFAULT=PKCS11

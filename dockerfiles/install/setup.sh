@@ -25,6 +25,8 @@ LD_FLAGS="-X github.com/hyperledger/fabric/common/metadata.Version=${PROJECT_VER
           -X github.com/hyperledger/fabric/common/metadata.DockerNamespace=hyperledger \
           -X github.com/hyperledger/fabric/common/metadata.BaseDockerNamespace=hyperledger"
 
+GO_TAGS="pkcs11"
+
 # install prereqs
 INSTALL_PREREQS() {
   apt-get update
@@ -44,7 +46,7 @@ REMOVE_PREREQS() {
 # clone fabric-ca
 CLONE_FABRIC_CA() {
   mkdir -p ${GOPATH}/src/github.com/hyperledger/fabric-ca
-  git clone --single-branch -b release-1.0 https://github.com/hyperledger/fabric-ca ${GOPATH}/src/github.com/hyperledger/fabric-ca
+  git clone --single-branch -b release-1.4 https://github.com/hyperledger/fabric-ca ${GOPATH}/src/github.com/hyperledger/fabric-ca
   cd ${GOPATH}/src/github.com/hyperledger/fabric-ca
   git checkout ${FABRIC_TAG}
 }
@@ -52,19 +54,19 @@ CLONE_FABRIC_CA() {
 # compile fabric-ca-client
 COMPILE_FABRIC_CA_CLIENT() {
   cd ${GOPATH}/src/github.com/hyperledger/fabric-ca/cmd/fabric-ca-client
-  ${GOROOT}/bin/go build -o /usr/local/bin/fabric-ca-client
+  ${GOROOT}/bin/go build -o /usr/local/bin/fabric-ca-client -tags "$GO_TAGS"
 }
 
 # compile fabric-ca-server
 COMPILE_FABRIC_CA_SERVER() {
   cd ${GOPATH}/src/github.com/hyperledger/fabric-ca/cmd/fabric-ca-server
-  ${GOROOT}/bin/go build -o /usr/local/bin/fabric-ca-server
+  ${GOROOT}/bin/go build -o /usr/local/bin/fabric-ca-server -tags "$GO_TAGS"
 }
 
 # clone fabric-peer
 CLONE_FABRIC_PEER() {
   mkdir -p ${GOPATH}/src/github.com/hyperledger/fabric
-  git clone --single-branch -b release-1.0 https://github.com/hyperledger/fabric ${GOPATH}/src/github.com/hyperledger/fabric
+  git clone --single-branch -b release-1.4 https://github.com/hyperledger/fabric ${GOPATH}/src/github.com/hyperledger/fabric
   cd ${GOPATH}/src/github.com/hyperledger/fabric
   git checkout ${FABRIC_TAG}
 
@@ -77,13 +79,13 @@ CLONE_FABRIC_PEER() {
 # compile fabric-peer
 COMPILE_FABRIC_PEER() {
   cd ${GOPATH}/src/github.com/hyperledger/fabric/peer
-  ${GOROOT}/bin/go build -o /usr/local/bin/peer -ldflags "$LD_FLAGS"
+  ${GOROOT}/bin/go build -o /usr/local/bin/peer -ldflags "$LD_FLAGS" -tags "$GO_TAGS"
 }
 
 # compile fabric-orderer
 COMPILE_FABRIC_ORDERER() {
   cd ${GOPATH}/src/github.com/hyperledger/fabric/orderer
-  ${GOROOT}/bin/go build -o /usr/local/bin/orderer -ldflags "$LD_FLAGS"
+  ${GOROOT}/bin/go build -o /usr/local/bin/orderer -ldflags "$LD_FLAGS" -tags "$GO_TAGS"
 }
 
 # compile tools
@@ -91,12 +93,12 @@ COMPILE_FABRIC_TOOLS() {
   for tool in cryptogen configtxlator; do
     cd ${GOPATH}/src/github.com/hyperledger/fabric/common/tools/${tool}
     ${GOROOT}/bin/go build -o /usr/local/bin/${tool} \
-      -ldflags "-X github.com/hyperledger/fabric/common/tools/${tool}/metadata.Version=${PROJECT_VERSION}"
+      -ldflags "-X github.com/hyperledger/fabric/common/tools/${tool}/metadata.Version=${PROJECT_VERSION}" -tags "$GO_TAGS"
   done
 
   cd ${GOPATH}/src/github.com/hyperledger/fabric/common/configtx/tool/configtxgen
   ${GOROOT}/bin/go build -o /usr/local/bin/configtxgen \
-    -ldflags "-X github.com/hyperledger/fabric/common/configtx/tool/configtxgen/metadata.Version=${PROJECT_VERSION}"
+    -ldflags "-X github.com/hyperledger/fabric/common/configtx/tool/configtxgen/metadata.Version=${PROJECT_VERSION}" -tags "$GO_TAGS"
 }
 
 # install fabric-cli
@@ -104,7 +106,7 @@ INSTALL_FABRIC_CLI() {
   mkdir -p ${GOPATH}/src/github.com/securekey/fabric-examples
   git clone https://github.com/securekey/fabric-examples ${GOPATH}/src/github.com/securekey/fabric-examples
   cd ${GOPATH}/src/github.com/securekey/fabric-examples/fabric-cli/cmd/fabric-cli
-  ${GOROOT}/bin/go build -o /usr/local/bin/fabric-cli
+  ${GOROOT}/bin/go build -o /usr/local/bin/fabric-cli -tags "$GO_TAGS"
 }
 
 # setup Golang

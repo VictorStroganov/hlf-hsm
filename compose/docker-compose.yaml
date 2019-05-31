@@ -123,7 +123,7 @@ services:
       - MSP_TLSCACERTS_DIR=/data/msp_tlsca
     ports:
       - "7051:7051"
-    command: /bin/bash -c 'sleep 8; ./usr/local/bin/entrypoint.sh peer node start --peer-defaultchain=false'
+    command: /bin/bash -c 'sleep 8; ./usr/local/bin/entrypoint.sh peer node start'
     depends_on:
       - ca-client-register
     networks:
@@ -160,7 +160,7 @@ services:
       - MSP_TLSCACERTS_DIR=/data/msp_tlsca
     ports:
       - "8051:7051"
-    command: /bin/bash -c 'sleep 8; ./usr/local/bin/entrypoint.sh peer node start --peer-defaultchain=false'
+    command: /bin/bash -c 'sleep 8; ./usr/local/bin/entrypoint.sh peer node start'
     depends_on:
       - ca-client-register
     networks:

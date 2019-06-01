@@ -60,7 +60,8 @@ services:
 
   fabric-tools:
     container_name: fabric-tools
-    image: gbolo/fabric-tools:${FABRIC_VERSION}
+    image:  hsm/fabric-tools:softhsm1.4
+    # gbolo/fabric-tools:${FABRIC_VERSION}
     environment:
       - FABRIC_CFG_PATH=/etc/hyperledger/fabric
       - CORE_PEER_BCCSP_DEFAULT=SW
@@ -123,6 +124,7 @@ services:
       - MSP_TLSCACERTS_DIR=/data/msp_tlsca
     ports:
       - "7051:7051"
+      - "7053:7053"
     command: /bin/bash -c 'sleep 8; ./usr/local/bin/entrypoint.sh peer node start'
     depends_on:
       - ca-client-register
@@ -198,6 +200,8 @@ services:
       - MSP_ADMIN_DIR=/data/adminOrdererOrg1MSP/signcerts
       - MSP_TLSCACERTS_DIR=/data/msp_tlsca
       - ENTRYPOINT_EXTENDED=/usr/local/bin/entrypoint-extended.sh
+    ports:
+      - "7050:7050"
     command: /bin/bash -c 'sleep 8; ./usr/local/bin/entrypoint.sh orderer start'
     depends_on:
       - caOrderer-client-register

@@ -96,9 +96,9 @@ COMPILE_FABRIC_TOOLS() {
       -ldflags "-X github.com/hyperledger/fabric/common/tools/${tool}/metadata.Version=${PROJECT_VERSION}" -tags "$GO_TAGS"
   done
 
-  cd ${GOPATH}/src/github.com/hyperledger/fabric/common/configtx/tool/configtxgen
+  cd ${GOPATH}/src/github.com/hyperledger/fabric/common/tools/configtxgen
   ${GOROOT}/bin/go build -o /usr/local/bin/configtxgen \
-    -ldflags "-X github.com/hyperledger/fabric/common/configtx/tool/configtxgen/metadata.Version=${PROJECT_VERSION}" -tags "$GO_TAGS"
+    -ldflags "-X github.com/hyperledger/fabric/common/tools/configtxgen/metadata.Version=${PROJECT_VERSION}" -tags "$GO_TAGS"
 }
 
 # install fabric-cli
@@ -178,7 +178,7 @@ elif [ "${build_type}" = "tools" ]; then
   CLONE_FABRIC_PEER
   COMPILE_FABRIC_PEER
   COMPILE_FABRIC_TOOLS
-  INSTALL_FABRIC_CLI
+  # INSTALL_FABRIC_CLI
   apt-get install -y tree openssl curl net-tools procps
 
 else

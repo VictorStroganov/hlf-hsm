@@ -113,6 +113,7 @@ registry:
        attrs:
           hf.Registrar.Roles: "client,user,peer,validator,auditor,orderer"
           hf.Registrar.DelegateRoles: "client,user,validator,auditor"
+          hf.Registrar.Attributes: "*"
           hf.Revoker: true
           hf.IntermediateCA: true
 

@@ -52,7 +52,8 @@ services:
       - fabric
 
   ca-base:
-    image: gbolo/fabric-ca:${FABRIC_VERSION}-softhsm
+    image: hsm/fabric-ca:softhsm1.4
+    # gbolo/fabric-ca:${FABRIC_VERSION}-softhsm
       # hsm/fabric-ca:softhsm1.4
     volumes:
       # main config
